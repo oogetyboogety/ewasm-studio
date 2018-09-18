@@ -1,3 +1,4 @@
+import './App.css';
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import {Web3} from 'web3'
@@ -7,8 +8,13 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Icon from '@material-ui/core/Icon'
 import {PulseLoader} from 'react-spinners';
 import TxModal from './components/TxModal';
+const remixapi = require('remix-plugin/src/remix-api')
+console.log(remixapi)
+var script = document.createElement("script")
+script.src = "../node_modules/remix-plugin/src/remix-api.js"
+document.head.appendChild(script)
+var extension = new window.RemixExtension()
 
-import './App.css';
 
 class App extends Component {
   constructor(props) {
@@ -16,6 +22,8 @@ class App extends Component {
 
     this.state = {
       wast: '',
+      wastURL: '',
+      remoteWastURL: false,
       anchorEl: null,
       placeholderText: "Contract Code (WAST)",
       //TxType: 'Transaction',
@@ -71,47 +79,47 @@ class App extends Component {
 
   onSubmitTx(e) {
     console.log('onSubmitTx clicked.')
-    function buf2hex(buffer) { // buffer is an ArrayBuffer
+        function buf2hex(buffer) { // buffer is an ArrayBuffer
       return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
     }
 
     this.setState({
       txStatusText: "Transaction Pending"
     })
+    
+        let wasm = ''
+        let wast = ""
 
-    let wasm = ''
-    let wast = ""
+        if (this.state.wast.length > 0 && !this.state.to) {
+          try {
+            let module = window.Binaryen.parseText(this.state.wast)
+            wasm = buf2hex(module.emitBinary())
+          } catch (e) {
+            alert(e)
+            //TODO do something here
+          }
 
-    if (this.state.wast.length > 0 && !this.state.to) {
-      try {
-        let module = window.Binaryen.parseText(this.state.wast)
-        wasm = buf2hex(module.emitBinary())
-      } catch (e) {
-        alert(e)
-        //TODO do something here
-      }
+          if (this.state.TxType == 'Contract') {
+            //contract creation transaction
 
-      if (this.state.TxType == 'Contract') {
-        //contract creation transaction
+            for (let i = 0; i < wasm.length; i += 2) {
+              wast += "\\" + wasm.slice(i, i + 2)
+            }
 
-        for (let i = 0; i < wasm.length; i += 2) {
-          wast += "\\" + wasm.slice(i, i + 2)
+            console.log(wast)
+            wast = `(module (import "ethereum" "finish" (func $finish (param i32 i32))) (memory 100) (data (i32.const 0)  "${wast}") (export "memory" (memory 0)) (export "main" (func $main)) (func $main (call $finish (i32.const 0) (i32.const ${wasm.length / 2}))))`
+
+            try {
+              let module = window.Binaryen.parseText(wast)
+              wasm = buf2hex(module.emitBinary())
+            } catch (e) {
+              alert(e)
+              //TODO do something here
+            }
+          }
+        } else {
+          wasm = this.state.wast
         }
-
-        console.log(wast)
-        wast = `(module (import "ethereum" "finish" (func $finish (param i32 i32))) (memory 100) (data (i32.const 0)  "${wast}") (export "memory" (memory 0)) (export "main" (func $main)) (func $main (call $finish (i32.const 0) (i32.const ${wasm.length / 2}))))`
-
-        try {
-          let module = window.Binaryen.parseText(wast)
-          wasm = buf2hex(module.emitBinary())
-        } catch (e) {
-          alert(e)
-          //TODO do something here
-        }
-      }
-    } else {
-      wasm = this.state.wast
-    }
 
     // this might be a problem, because it triggers a re-render..
     this.setState({loading: true})
@@ -136,9 +144,9 @@ class App extends Component {
       }
     }
 
+      /*
     this.state.web3.eth.sendTransaction(txn, (e, tx) => {
       if (e) throw(e)
-      /*
       this.state.web3.eth.getTransactionReceipt(tx, (e, txn) => {
         if (e) throw(e)
         if (txn) {
@@ -147,7 +155,6 @@ class App extends Component {
         }
         }
       })
-      */
       let state = this.state
       let onTx = this.onTx.bind(this)
       let onTxDone = false
@@ -197,6 +204,40 @@ class App extends Component {
         })
       }, 100)
     })
+    */
+    // pass the event sendCompilationResult
+    // @param data {
+    //    contracts: Array(
+    //      ../
+    //      Object: Contract { // Example contract 
+    //        abi: Array(
+    //          Fallback: main // Example main function 
+    //        )
+    //      }
+    //    ) 
+    // } 
+    //  receive the getCompilationResult
+    //  push onto contracts the Contract object:
+    extension.call('compiler', 'sendCompilationResult', ['dummyContract.wast', wast, 'ewasm', {
+        "sources":
+        {
+            "dummyContract.wast": {
+                id: 1,
+                ast: {}
+            }
+        },
+        "contracts": 
+        {
+           "dummyContract.wast": {
+             "ContractName": "",
+               "ewasm": {
+                "wast": wast,
+                "wasm": wasm
+               }
+           } 
+        }
+    }]
+  )
   }
 
   onTx(tx) {
@@ -248,7 +289,12 @@ class App extends Component {
   }
 
   handleClick = event => {
-    this.setState({ anchorEl: event.currentTarget });
+    if (this.state.wastURL.substring(0,4)==='http') {
+      this.setState({remoteWastURL: true})
+    } else {
+        //get the file from remix
+    }
+    
   };
 
   render() {
@@ -302,6 +348,20 @@ class App extends Component {
           <textarea onChange={this.onValueUpdated} rows="1" cols="80" ></textarea>
           <h2 style={{"text-align": "left"}}> {this.state.placeholderText} </h2>
           <textarea onChange={this.handleChange} style={{display: "block", "float": "left"}} rows="20" cols="80" id="editor"></textarea>
+
+        {/*<Fetch url={this.state.wast}
+          onResponse={(error, response) => {
+            this.handleClick()
+          }}
+        >
+        {({ doFetch }) => (          
+          <div style={{display: "flex", "flex-direction": "row", "margin-top": "1em"}}>
+            <Button disabled={this.state.loading || (typeof this.state.web3 === 'undefined')} variant="contained" color="primary" onClick={() => this.doFetch()}>
+              Load file
+            </Button>
+        </Fetch>*/
+        }
+
           <div style={{display: "flex", "flex-direction": "row", "margin-top": "1em"}}>
             <Button disabled={this.state.loading || (typeof this.state.web3 === 'undefined')} variant="contained" color="primary" onClick={() => this.onSubmitTx()}>
               {this.state.txStatusText}
