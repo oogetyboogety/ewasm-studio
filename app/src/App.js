@@ -29,11 +29,13 @@ class App extends Component {
       //TxType: 'Transaction',
       TxType: 'Contract',
       txModalOpen: false,
-      txStatusText: "Submit Transaction",
+      txStatusText: "Deploy contract",
       loading: false,
       warningText: ''
     }
 
+    this.onCompileFromRemix = this.onCompileFromRemix.bind(this)
+    this.onCompileToRemix = this.onCompileToRemix.bind(this)
     //alert(binaryen)
     this.handleChange = this.handleChange.bind(this)
     //this.handleClose = this.handleClose.bind(this)
@@ -77,50 +79,92 @@ class App extends Component {
     this.setState({txModalOpen: false})
   }
 
-  onSubmitTx(e) {
-    console.log('onSubmitTx clicked.')
-        function buf2hex(buffer) { // buffer is an ArrayBuffer
+  onCompileFromRemix(e) {
+    var plugin = this
+    extension.call('editor', 'getCurrentFile', [], function (error, result) {
+      console.log(error, result)
+      extension.call('editor', 'getFile', result, (error, result) => {
+        console.log(result)
+        plugin.setState({
+            wast: result[0]
+        })
+      })
+    })
+  }
+  
+  compile() {
+    function buf2hex(buffer) { // buffer is an ArrayBuffer
       return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
     }
+
+    let wasm = ''
+    let wast = ""
+// nest this into a function
+    try {
+      let module = window.Binaryen.parseText(this.state.wast)
+      wasm = buf2hex(module.emitBinary())
+    } catch (e) {
+      alert(e)
+      //TODO do something here
+    }
+
+    for (let i = 0; i < wasm.length; i += 2) {
+      wast += "\\" + wasm.slice(i, i + 2)
+    }
+
+    console.log(wast)
+    wast = `(module (import "ethereum" "finish" (func $finish (param i32 i32))) (memory 100) (data (i32.const 0)  "${wast}") (export "memory" (memory 0)) (export "main" (func $main)) (func $main (call $finish (i32.const 0) (i32.const ${wasm.length / 2}))))`
+
+    try {
+      let module = window.Binaryen.parseText(wast)
+      wasm = buf2hex(module.emitBinary())
+    } catch (e) {
+      alert(e)
+      //TODO do something here
+    }
+    return {'wast': wast, 'wasm': wasm}
+  }
+
+  onCompileToRemix(e) {
+
+    console.log(this.state.wast)
+    var compileResults = this.compile()
+
+    var wast = compileResults['wast']
+    var wasm = compileResults['wasm']
+    extension.call('compiler', 'sendCompilationResult', ['dummyContract.wast', wast, 'ewasm', {
+        "sources":
+        {
+            "dummyContract.wast": {
+                id: 1,
+                ast: {}
+            }
+        },
+        "contracts": 
+        {
+           "dummyContract.wast": {
+             "ContractName": "",
+               "ewasm": {
+                "wast": wast,
+                "wasm": wasm
+               }
+           } 
+        }
+    }]
+   )
+  }
+
+  onSubmitTx(e) {
+    console.log('onSubmitTx clicked.')
 
     this.setState({
       txStatusText: "Transaction Pending"
     })
     
-        let wasm = ''
-        let wast = ""
+    var compileResults = this.compile()
 
-        if (this.state.wast.length > 0 && !this.state.to) {
-          try {
-            let module = window.Binaryen.parseText(this.state.wast)
-            wasm = buf2hex(module.emitBinary())
-          } catch (e) {
-            alert(e)
-            //TODO do something here
-          }
-
-          if (this.state.TxType == 'Contract') {
-            //contract creation transaction
-
-            for (let i = 0; i < wasm.length; i += 2) {
-              wast += "\\" + wasm.slice(i, i + 2)
-            }
-
-            console.log(wast)
-            wast = `(module (import "ethereum" "finish" (func $finish (param i32 i32))) (memory 100) (data (i32.const 0)  "${wast}") (export "memory" (memory 0)) (export "main" (func $main)) (func $main (call $finish (i32.const 0) (i32.const ${wasm.length / 2}))))`
-
-            try {
-              let module = window.Binaryen.parseText(wast)
-              wasm = buf2hex(module.emitBinary())
-            } catch (e) {
-              alert(e)
-              //TODO do something here
-            }
-          }
-        } else {
-          wasm = this.state.wast
-        }
-
+    var wast = compileResults['wast']
+    var wasm = compileResults['wasm']
     // this might be a problem, because it triggers a re-render..
     this.setState({loading: true})
 
@@ -144,9 +188,9 @@ class App extends Component {
       }
     }
 
-      /*
     this.state.web3.eth.sendTransaction(txn, (e, tx) => {
       if (e) throw(e)
+      /*
       this.state.web3.eth.getTransactionReceipt(tx, (e, txn) => {
         if (e) throw(e)
         if (txn) {
@@ -155,11 +199,11 @@ class App extends Component {
         }
         }
       })
+    */
       let state = this.state
       let onTx = this.onTx.bind(this)
       let onTxDone = false
       let blockCount = 0
-
 
       //let filter = this.state.web3.eth.filter("latest")
 
@@ -188,7 +232,7 @@ class App extends Component {
                   // TODO add this ^ back in after figuring out why it doesn't work with cpp-ethereum
 
                   clearInterval(interval)
-                  this.setState({txStatusText: "Submit Transaction"})
+                  this.setState({txStatusText: "Deploy contract"})
                   onTx(txn)
                 }
               })
@@ -204,40 +248,6 @@ class App extends Component {
         })
       }, 100)
     })
-    */
-    // pass the event sendCompilationResult
-    // @param data {
-    //    contracts: Array(
-    //      ../
-    //      Object: Contract { // Example contract 
-    //        abi: Array(
-    //          Fallback: main // Example main function 
-    //        )
-    //      }
-    //    ) 
-    // } 
-    //  receive the getCompilationResult
-    //  push onto contracts the Contract object:
-    extension.call('compiler', 'sendCompilationResult', ['dummyContract.wast', wast, 'ewasm', {
-        "sources":
-        {
-            "dummyContract.wast": {
-                id: 1,
-                ast: {}
-            }
-        },
-        "contracts": 
-        {
-           "dummyContract.wast": {
-             "ContractName": "",
-               "ewasm": {
-                "wast": wast,
-                "wasm": wasm
-               }
-           } 
-        }
-    }]
-  )
   }
 
   onTx(tx) {
@@ -312,29 +322,14 @@ class App extends Component {
         </header>
         <div style={{display: "flex", "flex-direction": "column", margin: "auto", width: "600px"}} >
           <h3 style={{"text-align": "left", "color": "red"}}>{this.state.warningText}</h3>
-          {/*
-          <h2 style={{"text-align": "left"}}> Transaction Type </h2>
-          <div>
-            <Button
-              aria-owns={anchorEl ? 'simple-menu' : null}
-              aria-haspopup="true"
-              onClick={this.handleClick}
-              style={{"float": "left"}}
-            >
-              {this.state.TxType}
-              <Icon right>expand_more</Icon>
+          <div style={{display: "flex", "flex-direction": "row", "margin-top": "1em"}}>
+            <Button disabled={this.state.loading || (typeof this.state.web3 === 'undefined')} variant="contained" color="primary" onClick={() => this.onCompileFromRemix()}>
+              Get file from remix
             </Button>
-            <Menu
-              id="simple-menu"
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={this.handleClose}
-            >
-              <MenuItem onClick={this.setTx}>Normal Transaction</MenuItem>
-              <MenuItem onClick={this.setContract}>Contract Creation</MenuItem>
-            </Menu>
+            <Button disabled={this.state.loading || (typeof this.state.web3 === 'undefined')} variant="contained" color="primary" onClick={() => this.onCompileToRemix()} style={{"margin-left": "20px"}}>
+              Send contract to remix
+            </Button>
           </div>
-          */}
           <h2 style={{"text-align": "left"}}> Destination Address</h2>
           <textarea
             placeholder="Enter an address to send normal transaction. Leave blank to send contract creation tx."
@@ -346,8 +341,7 @@ class App extends Component {
           </textarea>
           <h2 style={{"text-align": "left"}}> Value (Wei) </h2>
           <textarea onChange={this.onValueUpdated} rows="1" cols="80" ></textarea>
-          <h2 style={{"text-align": "left"}}> {this.state.placeholderText} </h2>
-          <textarea onChange={this.handleChange} style={{display: "block", "float": "left"}} rows="20" cols="80" id="editor"></textarea>
+          <textarea onChange={this.handleChange} style={{display: "none", "float": "left"}} rows="20" cols="80" id="editor"></textarea>
 
         {/*<Fetch url={this.state.wast}
           onResponse={(error, response) => {
