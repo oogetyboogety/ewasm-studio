@@ -25,7 +25,7 @@ class App extends Component {
       wastURL: '',
       remoteWastURL: false,
       anchorEl: null,
-      placeholderText: "Contract Code (WAST)",
+      placeholderText: "Contract.wast",
       //TxType: 'Transaction',
       TxType: 'Contract',
       txModalOpen: false,
@@ -83,6 +83,9 @@ class App extends Component {
     var plugin = this
     extension.call('editor', 'getCurrentFile', [], function (error, result) {
       console.log(error, result)
+      plugin.setState({
+        placeholderText: result[0]
+      })
       extension.call('editor', 'getFile', result, (error, result) => {
         console.log(result)
         plugin.setState({
@@ -132,25 +135,24 @@ class App extends Component {
 
     var wast = compileResults['wast']
     var wasm = compileResults['wasm']
-    extension.call('compiler', 'sendCompilationResult', ['dummyContract.wast', wast, 'ewasm', {
-        "sources":
-        {
-            "dummyContract.wast": {
-                id: 1,
-                ast: {}
-            }
+    var data = {
+        'sources': {},
+        'contracts':{}
+    }
+    data['sources'][this.state.placeholderText] = { id: 1, ast: {}}
+    data['contracts'][this.state.placeholderText] = {
+        // If the language used has no contract names, this field should equal to an empty string.
+        "": {
+            // The Ethereum Contract ABI. If empty, it is represented as an empty array.
+            // See https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI
+            abi: []
         },
-        "contracts": 
-        {
-           "dummyContract.wast": {
-             "ContractName": "",
-               "ewasm": {
-                "wast": wast,
-                "wasm": wasm
-               }
-           } 
+        "ewasm": {
+            "wast": wast,
+            "wasm": wasm
         }
-    }]
+    }
+    extension.call('compiler', 'sendCompilationResult', [this.state.placeholderText, wast, 'ewasm', data]
    )
   }
 
