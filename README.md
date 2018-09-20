@@ -15,23 +15,25 @@ clone remix-ide and checkout #1524 ethereum/remix-ide#1524
 
 clone remix, checkout #973 ethereum/remix#973,
 
-in remix/remix-lib npm install, npm link, then npm link remix-lib in /remix-ide
+in remix/remix-lib `npm install`, `npm link`, then `npm link remix-lib` in /remix-ide
 
-in remix/remix-solidity, npm install, npm link, then npm link remix-solidity in /remix-ide
+in remix/remix-solidity, `npm install`, `npm link`, then `npm link remix-solidity` in /remix-ide
 
-npm install in /remix-ide
+`npm install` in /remix-ide
 Implemented:
 
 clone ewasm-studio-remix https://github.com/oogetyboogety/ewasm-studio-remix
 
-npm start in /ewasm-studio-remix, npm start in /remix-ide, and start your geth node as illustrated here:
+`npm start` in /ewasm-studio-remix, `npm start` in /remix-ide, and start your geth node as illustrated here:
 https://github.com/ewasm/testnet/
 
 load the plugin from the settings tab in remix-ide
-{ "title": "ewasm-studio-remix", "url": "http://127.0.0.1:3000" }
+`{ "title": "ewasm-studio-remix", "url": "http://127.0.0.1:3000" }`
 
 
-Paste a WAST into a new file, or
+Paste a WAST into a new file, such as the basic ledger contract here:
+https://github.com/ewasm/assemblyscript-ewasm-api
+or
 use remixd to load a WAST file into Remix and open it
 Click the Get from remix button
 If you haven't checked out the new PRs, set a value and deploy the contract to testnet directly from the plugin
