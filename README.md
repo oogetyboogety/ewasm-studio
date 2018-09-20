@@ -16,11 +16,12 @@ The default port (if not specified) is 3000.
 
 * git clone remix, checkout #973 ethereum/remix#973,
 
-* in remix/remix-lib `npm install`, `npm link`, then `npm link remix-lib` in /remix-ide
+* In remix/remix-lib `npm install`, `npm link`, then `npm link remix-lib` in /remix-ide
 
-* in remix/remix-solidity, `npm install`, `npm link`, then `npm link remix-solidity` in /remix-ide
+* In remix/remix-solidity, `npm install`, `npm link`, then `npm link remix-solidity` in /remix-ide
 
 * `npm install` in /remix-ide
+
 Implemented:
 
 * git clone ewasm-studio-remix https://github.com/oogetyboogety/ewasm-studio-remix
