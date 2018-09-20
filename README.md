@@ -14,7 +14,9 @@ The default port (if not specified) is 3000.
 
 * git clone remix-ide and checkout #1524 ethereum/remix-ide#1524
 
-* git clone remix, checkout #973 ethereum/remix#973,
+* git clone remix, checkout #973 ethereum/remix#973
+
+* git clone https://github.com/yann300/remix-plugin
 
 * In remix/remix-lib `npm install`, `npm link`, then `npm link remix-lib` in /remix-ide
 
@@ -25,6 +27,8 @@ The default port (if not specified) is 3000.
 Implemented:
 
 * git clone ewasm-studio-remix https://github.com/oogetyboogety/ewasm-studio-remix
+
+* In remix/remix-plugin, `npm install`, `npm link`, then `npm link remix-plugin` in /ewasm-studio-remix
 
 * `npm start` in /ewasm-studio-remix, `npm start` in /remix-ide, and start your geth node as illustrated here:
 https://github.com/ewasm/testnet/
@@ -44,4 +48,4 @@ or
 
 * If you have checked out the latest PRs, click the Send to remix button and Deploy from the Run tab
 
-* Call the functions fallback function with some arbitrary value using JSON inputs to the `fallback` function
+* Call the functions fallback function with some arbitrary value using hex string input prefixed with 'raw:0x...' to the `fallback` function
