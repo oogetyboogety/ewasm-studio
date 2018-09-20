@@ -140,18 +140,36 @@ class App extends Component {
         'contracts':{}
     }
     data['sources'][this.state.placeholderText] = { id: 1, ast: {}}
-    data['contracts'][this.state.placeholderText] = {
+    data['contracts'][this.state.placeholderText] = {}
         // If the language used has no contract names, this field should equal to an empty string.
-        "": {
+    data['contracts'][this.state.placeholderText][this.state.placeholderText.split('/').slice(-1)[0].split('.')[0]] = {
             // The Ethereum Contract ABI. If empty, it is represented as an empty array.
             // See https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI
-            abi: []
-        },
-        "ewasm": {
-            "wast": wast,
-            "wasm": wasm
-        }
-    }
+            "abi": [
+                {
+                    "payable": false,
+                    "stateMutability": "nonpayable",
+                    "type": "fallback",
+                    "inputs": [{"name": "CallData", "type": "string"}],
+                } 
+            ],
+            "evm": {
+                "bytecode": {
+                    "linkReferences": {
+                        
+                    },
+                    "object": wasm,
+                    "opcodes": wast
+                    
+                }
+            }
+    },
+    /*
+     * data['contracts'][this.state.placeholderText]['ewasm'] = {
+     *       "wast": wast,
+     *       "wasm": wasm
+     *}
+    */
     extension.call('compiler', 'sendCompilationResult', [this.state.placeholderText, wast, 'ewasm', data]
    )
   }
