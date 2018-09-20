@@ -1,4 +1,4 @@
-# *EWASM Studio*
+# *EWASM Studio* for Remix
 
 A lightweight development environment for eWASM.
 
