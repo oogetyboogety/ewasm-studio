@@ -12,9 +12,9 @@ The application is available in the `app` directory, all commands below must be 
 
 The default port (if not specified) is 3000.
 
-* git clone remix-ide and checkout #1524 ethereum/remix-ide#1524
+* git clone remix-ide and checkout #1534 https://github.com/ethereum/remix-ide/pull/1534/
 
-* git clone remix, checkout #973 ethereum/remix#973
+* git clone remix, checkout #985 https://github.com/ethereum/remix/pull/985/files
 
 * git clone https://github.com/yann300/remix-plugin
 
