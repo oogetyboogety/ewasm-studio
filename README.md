@@ -21,7 +21,7 @@ https://github.com/ewasm/assemblyscript-ewasm-api
 or
 * use remixd to load a WAST file into Remix and open it
 
-* Click the Get from remix button
+* Click the Compile button
 
 * If you are not on Remix alpha, set a value and deploy the contract to testnet directly from the plugin
 
