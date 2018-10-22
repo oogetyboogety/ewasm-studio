@@ -35,7 +35,6 @@ class App extends Component {
     }
 
     this.onCompileFromRemix = this.onCompileFromRemix.bind(this)
-    this.onCompileToRemix = this.onCompileToRemix.bind(this)
     //alert(binaryen)
     this.handleChange = this.handleChange.bind(this)
     //this.handleClose = this.handleClose.bind(this)
@@ -91,8 +90,10 @@ class App extends Component {
         plugin.setState({
             wast: result[0]
         })
+        plugin.compileToRemix()
       })
     })
+
   }
   
   compile() {
@@ -128,7 +129,7 @@ class App extends Component {
     return {'wast': wast, 'wasm': wasm}
   }
 
-  onCompileToRemix(e) {
+  compileToRemix() {
 
     console.log(this.state.wast)
     var compileResults = this.compile()
@@ -161,6 +162,9 @@ class App extends Component {
                     "object": wasm,
                     "opcodes": wast
                     
+                },
+                "deployedBytecode": {
+                    "object": wasm
                 }
             }
     },
@@ -344,10 +348,7 @@ class App extends Component {
           <h3 style={{"text-align": "left", "color": "red"}}>{this.state.warningText}</h3>
           <div style={{display: "flex", "flex-direction": "row", "margin-top": "1em"}}>
             <Button disabled={this.state.loading || (typeof this.state.web3 === 'undefined')} variant="contained" color="primary" onClick={() => this.onCompileFromRemix()}>
-              Get file from remix
-            </Button>
-            <Button disabled={this.state.loading || (typeof this.state.web3 === 'undefined')} variant="contained" color="primary" onClick={() => this.onCompileToRemix()} style={{"margin-left": "20px"}}>
-              Send contract to remix
+              Compile
             </Button>
           </div>
           <h2 style={{"text-align": "left"}}> Destination Address</h2>
